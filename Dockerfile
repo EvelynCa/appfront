@@ -14,7 +14,7 @@ FROM nginx:alpine
 
 # Copia archivos estáticos de React al contenedor de nginx
 COPY --from=build /app/build /usr/share/nginx/html
-
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Elimina la configuración por defecto y copia la nuestra (opcional)
 # COPY nginx.conf /etc/nginx/conf.d/default.conf
 
