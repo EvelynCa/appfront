@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  api:
+    build: ../api-nest-crud
+    container_name: nest-api
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASS=root
+      - DB_NAME=pruebaCrud
+    networks:
+      - app-network
+
+  frontend:
+    container_name: react-frontend
+    build: ./frontend
+    ports:
+      - '3002:3000' # o como expongas React
+    depends_on:
+      - api

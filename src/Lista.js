@@ -1,14 +1,36 @@
 import React, { useState } from 'react';
 import { FaTrash } from 'react-icons/fa';
+import axios from 'axios';
 
 function App() {
   const [tasks, setTasks] = useState([]);
   const [input, setInput] = useState('');
 
-  const addTask = () => {
-    if (input.trim()) {
-      setTasks([...tasks, { text: input, completed: false }]);
-      setInput('');
+  const addTask = async () => {
+    const task = {
+      name: input,
+      description: input,
+      createdAt: new Date(),
+      completed: false,
+    };
+
+    //const token = localStorage.getItem('token');
+
+    try {
+      console.log('inicio de petición')
+      const response = await axios.post('http://localhost:3000/activities', task, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsImVtYWlsIjoicnJlbWJhbzE4QGNvcnJlby5jb20iLCJpYXQiOjE3NDU5NzYzMzksImV4cCI6MTc0NjA2MjczOX0.uKxWYG06sdCtRof1KjU51XMr_V2LZlcHojcnJ_cDIuU`,
+        },
+      });
+      console.log('Respuesta:', response.data);
+      if (input.trim()) {
+        setTasks([...tasks, { text: input, completed: false }]);
+        setInput('');
+      }
+    } catch (error) {
+      console.error('Error al enviar la tarea:', error);
     }
   };
 
@@ -22,7 +44,6 @@ function App() {
     const newTasks = tasks.filter((_, i) => i !== index);
     setTasks(newTasks);
   };
-
 
   const buttonStyle = {
     backgroundColor: '#007bff',
@@ -53,10 +74,14 @@ function App() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Nueva tarea"
           />
-          <button style={buttonStyle}
+          <button
+            style={buttonStyle}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            onClick={addTask}>Agregar</button>
+            onClick={addTask}
+          >
+            Agregar
+          </button>
 
           <ul>
             {tasks.map((task, index) => (
@@ -64,17 +89,23 @@ function App() {
                 key={index}
                 style={{
                   textDecoration: task.completed ? 'line-through' : 'none',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
                 }}
                 onClick={() => toggleTask(index)}
               >
                 {task.text}
-                <button className="btn-delete" style={buttonStyle}
+                <button
+                  className="btn-delete"
+                  style={buttonStyle}
                   onMouseEnter={handleMouseEnter}
-                  onMouseLeave={handleMouseLeave} onClick={(e) => { e.stopPropagation(); deleteTask(index); }}>
+                  onMouseLeave={handleMouseLeave}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteTask(index);
+                  }}
+                >
                   <FaTrash />
                 </button>
-
               </li>
             ))}
           </ul>
