@@ -1,10 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import axios from 'axios';
+import { useNavigate } from "react-router-dom";
 
 function App() {
   const [tasks, setTasks] = useState([]);
   const [input, setInput] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/"); 
+    }
+  }, [navigate]);
 
   const addTask = async () => {
     const task = {
@@ -14,14 +23,14 @@ function App() {
       completed: false,
     };
 
-    //const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token');
 
     try {
       console.log('inicio de petición')
       const response = await axios.post('http://localhost:3000/activities', task, {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjIsImVtYWlsIjoicnJlbWJhbzE4QGNvcnJlby5jb20iLCJpYXQiOjE3NDU5NzYzMzksImV4cCI6MTc0NjA2MjczOX0.uKxWYG06sdCtRof1KjU51XMr_V2LZlcHojcnJ_cDIuU`,
+          Authorization: `Bearer ${token}`,
         },
       });
       console.log('Respuesta:', response.data);
@@ -64,8 +73,21 @@ function App() {
     e.target.style.backgroundColor = '#007bff';
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("token"); 
+    navigate("/"); 
+  };
+
   return (
     <div className="d-flex justify-content-center align-items-center bg-primary vh-100">
+      <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4">
+        <span className="navbar-brand">Tareas</span>
+        <div className="ml-auto">
+          <button className="btn btn-outline-light" onClick={handleLogout}>
+            Cerrar sesión
+          </button>
+        </div>
+      </nav>
       <div className="bg-white p-3 w-25">
         <div style={{ padding: '20px' }}>
           <h1>Listado de Tareas</h1>
