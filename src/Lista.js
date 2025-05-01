@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FaTrash } from 'react-icons/fa';
+import { FaCheck, FaTrash } from 'react-icons/fa';
 import axios from 'axios';
 import { useNavigate } from "react-router-dom";
 
@@ -8,50 +8,92 @@ function App() {
   const [input, setInput] = useState('');
   const navigate = useNavigate();
 
+
+  const getTasks = async () => {
+    const token = localStorage.getItem("token");
+    const iduser = localStorage.getItem("iduser");
+    try {
+      console.log("peticion para consulta de tareas")
+      const response = await axios.get(`http://localhost:3000/activities/user/${iduser}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log(response.data)
+      console.log([response.data])
+      setTasks(response.data);
+    } catch (error) {
+      console.error('Error al obtener las tareas:', error);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("token");
+    
     if (!token) {
-      navigate("/"); 
+      navigate("/");
+    } else {
+      console.log("se va a cargar el listado")
+      getTasks();
     }
   }, [navigate]);
 
   const addTask = async () => {
+    const token = localStorage.getItem("token");
+    const iduser = localStorage.getItem("iduser");
     const task = {
       name: input,
       description: input,
       createdAt: new Date(),
       completed: false,
+      idUser: iduser,
+      activated: true
     };
 
-    const token = localStorage.getItem('token');
-
     try {
-      console.log('inicio de petición')
-      const response = await axios.post('http://localhost:3000/activities', task, {
+      await axios.post('http://localhost:3000/activities', task, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log('Respuesta:', response.data);
-      if (input.trim()) {
-        setTasks([...tasks, { text: input, completed: false }]);
-        setInput('');
-      }
+      setInput('');
+      getTasks(); 
     } catch (error) {
-      console.error('Error al enviar la tarea:', error);
+      console.error('Error al agregar la tarea:', error);
     }
   };
 
-  const toggleTask = (index) => {
-    const newTasks = [...tasks];
-    newTasks[index].completed = !newTasks[index].completed;
-    setTasks(newTasks);
+  const deleteTask = async (id) => {
+    console.log(id)
+    const token = localStorage.getItem("token");
+ 
+    try {
+      await axios.put(`http://localhost:3000/activities/update/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      getTasks(); 
+    } catch (error) {
+      console.error('Error al eliminar la tarea:', error);
+    }
   };
 
-  const deleteTask = (index) => {
-    const newTasks = tasks.filter((_, i) => i !== index);
-    setTasks(newTasks);
+  const completedTask = async (id) => {
+    console.log(id)
+    const token = localStorage.getItem("token");
+ 
+    try {
+      await axios.put(`http://localhost:3000/activities/completed/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      getTasks(); 
+    } catch (error) {
+      console.error('Error al eliminar la tarea:', error);
+    }
   };
 
   const buttonStyle = {
@@ -61,7 +103,7 @@ function App() {
     border: 'none',
     borderRadius: '6px',
     cursor: 'pointer',
-    fontSize: '10px',
+    fontSize: '14px',
     transition: 'background-color 0.3s',
   };
 
@@ -73,28 +115,16 @@ function App() {
     e.target.style.backgroundColor = '#007bff';
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token"); 
-    navigate("/"); 
-  };
-
   return (
     <div className="d-flex justify-content-center align-items-center bg-primary vh-100">
-      <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-4">
-        <span className="navbar-brand">Tareas</span>
-        <div className="ml-auto">
-          <button className="btn btn-outline-light" onClick={handleLogout}>
-            Cerrar sesión
-          </button>
-        </div>
-      </nav>
-      <div className="bg-white p-3 w-25">
-        <div style={{ padding: '20px' }}>
-          <h1>Listado de Tareas</h1>
+      <div className="bg-white p-4" style={{ width: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
+        <h1 className="mb-4">Listado de Tareas</h1>
+        <div className="d-flex mb-3">
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Nueva tarea"
+            className="form-control me-2"
           />
           <button
             style={buttonStyle}
@@ -104,34 +134,52 @@ function App() {
           >
             Agregar
           </button>
-
-          <ul>
-            {tasks.map((task, index) => (
-              <li
-                key={index}
-                style={{
-                  textDecoration: task.completed ? 'line-through' : 'none',
-                  cursor: 'pointer',
-                }}
-                onClick={() => toggleTask(index)}
-              >
-                {task.text}
-                <button
-                  className="btn-delete"
-                  style={buttonStyle}
-                  onMouseEnter={handleMouseEnter}
-                  onMouseLeave={handleMouseLeave}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteTask(index);
-                  }}
-                >
-                  <FaTrash />
-                </button>
-              </li>
-            ))}
-          </ul>
         </div>
+
+        <table className="table table-striped">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Tarea</th>
+              <th>Completada</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Array.isArray(tasks) && tasks.map((task, index) => (
+              <tr key={task.id || index}  style={{ cursor: 'pointer' }}>
+                <td>{index + 1}</td>
+                <td style={{ textDecoration: task.completed ? 'line-through' : 'none' }}>
+                  {task.name}
+                </td>
+                <td>  {task.completed ? 'Sí' : 'No'}
+                </td>
+                <td>
+                  <button
+                    className="btn btn-sm btn-danger"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteTask(task.id);
+                    }}
+                  >
+                    <FaTrash />
+                  </button>
+                  {!task.completed && (
+                    <button
+                      className="btn btn-sm btn-success ms-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        completedTask(task.id);
+                      }}
+                    >
+                      <FaCheck />
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

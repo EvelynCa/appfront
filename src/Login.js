@@ -38,7 +38,9 @@ function Login() {
             });
 
             const token = response.data.token;
-            localStorage.setItem("token", token); // o sessionStorage
+            const iduser = response.data.user.id;
+            localStorage.setItem("token", token); 
+            localStorage.setItem("iduser", iduser);
 
             navigate("/lista");
         } catch (err) {
